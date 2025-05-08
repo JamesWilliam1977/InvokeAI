@@ -32,7 +32,7 @@ const ParamCLIPEmbedModelSelect = () => {
   });
 
   return (
-    <FormControl isDisabled={!options.length} isInvalid={!options.length} minW={0} flexGrow={1}>
+    <FormControl isDisabled={!options.length} isInvalid={!options.length} minW={0} flexGrow={1} gap={2}>
       <FormLabel m={0}>{t('modelManager.clipGEmbed')}</FormLabel>
       <Combobox value={value} options={options} onChange={onChange} noOptionsMessage={noOptionsMessage} />
     </FormControl>

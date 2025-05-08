@@ -58,7 +58,7 @@ const LoRASelect = () => {
   const noOptionsMessage = useCallback(() => t('models.noMatchingLoRAs'), [t]);
 
   return (
-    <FormControl isDisabled={!options.length}>
+    <FormControl isDisabled={!options.length} gap={2}>
       <InformationalPopover feature="lora">
         <FormLabel>{t('models.concepts')} </FormLabel>
       </InformationalPopover>

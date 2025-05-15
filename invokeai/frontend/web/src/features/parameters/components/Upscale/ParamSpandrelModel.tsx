@@ -1,4 +1,4 @@
-import { Box, Combobox, FormControl, FormLabel, Tooltip } from '@invoke-ai/ui-library';
+import { Box, Combobox, Flex, FormControl, FormLabel, Tooltip } from '@invoke-ai/ui-library';
 import { useAppDispatch, useAppSelector } from 'app/store/storeHooks';
 import { InformationalPopover } from 'common/components/InformationalPopover/InformationalPopover';
 import { useModelCombobox } from 'common/hooks/useModelCombobox';
@@ -41,18 +41,20 @@ const ParamSpandrelModel = () => {
       <InformationalPopover feature="upscaleModel">
         <FormLabel>{t('upscaling.upscaleModel')}</FormLabel>
       </InformationalPopover>
-      <Tooltip label={tooltipLabel}>
-        <Box w="full">
-          <Combobox
-            value={value}
-            placeholder={placeholder}
-            options={options}
-            onChange={onChange}
-            noOptionsMessage={noOptionsMessage}
-            isDisabled={options.length === 0}
-          />
-        </Box>
-      </Tooltip>
+      <Flex w="full" alignItems="center" gap={2}>
+        <Tooltip label={tooltipLabel}>
+          <Box w="full">
+            <Combobox
+              value={value}
+              placeholder={placeholder}
+              options={options}
+              onChange={onChange}
+              noOptionsMessage={noOptionsMessage}
+              isDisabled={options.length === 0}
+            />
+          </Box>
+        </Tooltip>
+      </Flex>
     </FormControl>
   );
 };

@@ -240,7 +240,15 @@
         "error_withCount_other": "{{count}} lỗi",
         "value": "Giá Trị",
         "label": "Nhãn Tên",
-        "systemInformation": "Thông Tin Hệ Thống"
+        "systemInformation": "Thông Tin Hệ Thống",
+        "model_withCount_other": "{{count}} model",
+        "noOptions": "Không Có Lựa Chọn",
+        "noMatches": "Không Có Mục Phù Hợp",
+        "search": "Tìm Kiếm",
+        "clear": "Dọn Dẹp",
+        "compactView": "Chế Độ Xem Gọn",
+        "fullView": "Chế Độ Xem Đầy Đủ",
+        "options_withCount_other": "{{count}} thiết lập"
     },
     "prompt": {
         "addPromptTrigger": "Thêm Prompt Trigger",
@@ -321,7 +329,8 @@
         "confirm": "Đồng Ý",
         "retrySucceeded": "Mục Đã Thử Lại",
         "retryFailed": "Có Vấn Đề Khi Thử Lại Mục",
-        "retryItem": "Thử Lại Mục"
+        "retryItem": "Thử Lại Mục",
+        "credits": "Nguồn"
     },
     "hotkeys": {
         "canvas": {
@@ -774,7 +783,13 @@
         "urlUnauthorizedErrorMessage": "Bạn có thể cần thiếp lập một token API để dùng được model này.",
         "fluxRedux": "FLUX Redux",
         "sigLip": "SigLIP",
-        "llavaOnevision": "LLaVA OneVision"
+        "llavaOnevision": "LLaVA OneVision",
+        "fileSize": "Kích Thước Tệp",
+        "filterModels": "Lọc Model",
+        "modelPickerFallbackNoModelsInstalled2": "Nhấp vào <LinkComponent>Trình Quản Lý Model</LinkComponent> để tải.",
+        "modelPickerFallbackNoModelsInstalled": "Không Có Sẵn Model.",
+        "manageModels": "Quản Lý Model",
+        "hfTokenReset": "Làm Mới HF Token"
     },
     "metadata": {
         "guidance": "Hướng Dẫn",
@@ -1513,7 +1528,12 @@
             "batchNodeNotConnected": "Node Hàng Loạt chưa được kết nối: {{label}}",
             "batchNodeEmptyCollection": "Một vài node hàng loạt có tài nguyên rỗng",
             "collectionEmpty": "tài nguyên trống",
-            "batchNodeCollectionSizeMismatchNoGroupId": "tài nguyên theo nhóm có kích thước sai lệch"
+            "batchNodeCollectionSizeMismatchNoGroupId": "tài nguyên theo nhóm có kích thước sai lệch",
+            "modelIncompatibleBboxWidth": "Chiều rộng hộp giới hạn là {{width}} nhưng {{model}} yêu cầu bội số của {{multiple}}",
+            "modelIncompatibleBboxHeight": "Chiều dài hộp giới hạn là {{height}} nhưng {{model}} yêu cầu bội số của {{multiple}}",
+            "modelIncompatibleScaledBboxHeight": "Chiều dài hộp giới hạn theo tỉ lệ là {{height}} nhưng {{model}} yêu cầu bội số của {{multiple}}",
+            "modelIncompatibleScaledBboxWidth": "Chiều rộng hộp giới hạn theo tỉ lệ là {{width}} nhưng {{model}} yêu cầu bội số của {{multiple}}",
+            "modelDisabledForTrial": "Tạo sinh với {{modelName}} là không thể với tài khoản trial. Vào phần thiết lập tài khoản để nâng cấp."
         },
         "cfgScale": "Thang CFG",
         "useSeed": "Dùng Hạt Giống",
@@ -1576,7 +1596,8 @@
         "usePrompt": "Dùng Lệnh",
         "upscaling": "Upscale",
         "tileSize": "Kích Thước Khối",
-        "disabledNoRasterContent": "Đã Tắt (Không Có Nội Dung Dạng Raster)"
+        "disabledNoRasterContent": "Đã Tắt (Không Có Nội Dung Dạng Raster)",
+        "modelDisabledForTrial": "Tạo sinh với {{modelName}} là không thể với tài khoản trial. Vào phần <LinkComponent>thiết lập tài khoản</LinkComponent> để nâng cấp."
     },
     "dynamicPrompts": {
         "seedBehaviour": {
@@ -2073,6 +2094,14 @@
         "errors": {
             "unableToLoadImage": "Không Thể Tải Hình Ảnh",
             "unableToFindImage": "Không Thể Tìm Hình Ảnh"
+        },
+        "fluxReduxImageInfluence": {
+            "low": "Thấp",
+            "lowest": "Thấp Nhất",
+            "high": "Cao",
+            "imageInfluence": "Ảnh Chi Phối",
+            "medium": "Vừa",
+            "highest": "Cao Nhất"
         }
     },
     "stylePresets": {
@@ -2210,7 +2239,12 @@
         "unableToCopyDesc": "Trình duyệt của bạn không hỗ trợ tính năng clipboard. Người dùng Firefox có thể khắc phục theo ",
         "pasteSuccess": "Dán Vào {{destination}}",
         "pasteFailed": "Dán Thất Bại",
-        "fluxFillIncompatibleWithT2IAndI2I": "FLUX Fill không tương tích với Từ Ngữ Sang Hình Ảnh và Hình Ảnh Sang Hình Ảnh. Dùng model FLUX khác cho các tính năng này."
+        "fluxFillIncompatibleWithT2IAndI2I": "FLUX Fill không tương tích với Từ Ngữ Sang Hình Ảnh và Hình Ảnh Sang Hình Ảnh. Dùng model FLUX khác cho các tính năng này.",
+        "problemUnpublishingWorkflowDescription": "Có vấn đề khi ngừng đăng tải workflow. Vui lòng thử lại sau.",
+        "workflowUnpublished": "Workflow Đã Được Ngừng Đăng Tải",
+        "problemUnpublishingWorkflow": "Có Vấn Đề Khi Ngừng Đăng Tải Workflow",
+        "imagen3IncompatibleGenerationMode": "Google Imagen3 chỉ hỗ trợ Từ Ngữ Sang Hình Ảnh. Hãy dùng model khác cho các tác vụ Hình Ảnh Sang Hình Ảnh, Inpaint và Outpaint.",
+        "chatGPT4oIncompatibleGenerationMode": "ChatGPT 4o chỉ hỗ trợ Từ Ngữ Sang Hình Ảnh và Hình Ảnh Sang Hình Ảnh. Hãy dùng model khác cho các tác vụ Inpaint và Outpaint."
     },
     "ui": {
         "tabs": {
@@ -2323,7 +2357,6 @@
             "publishedWorkflowInputs": "Đầu Vào",
             "unpublish": "Chưa Đăng",
             "workflowLockedPublished": "Workflow được đăng tải sẽ bị khóa không thể biên tập.\nBạn có thể ngừng đăng để chỉnh sửa, hoặc tạo một bản sao của nó.",
-            "errorWorkflowHasBatchOrGeneratorNodes": "Workflow có lô node và/hoặc node sản sinh",
             "errorWorkflowHasInvalidGraph": "Đồ thị workflow không hợp lệ (di chuột đến nút Khởi Động để xem chi tiết)",
             "errorWorkflowHasNoOutputNode": "Không có node đầu ra được chọn",
             "warningWorkflowHasUnpublishableInputFields": "Workflow có một số đầu ra không đăng được - chúng sẽ bị bỏ sót khỏi workflow",
@@ -2338,7 +2371,8 @@
             "publishedWorkflowIsLocked": "Workflow đã đăng đang bị khóa",
             "publishingValidationRunInProgress": "Quá trình kiểm tra tính hợp lệ đang diễn ra.",
             "selectingOutputNodeDesc": "Bấm vào node để biến nó thành node đầu ra của workflow.",
-            "selectingOutputNode": "Chọn node đầu ra"
+            "selectingOutputNode": "Chọn node đầu ra",
+            "errorWorkflowHasUnpublishableNodes": "Workflow có lô node, node sản sinh, hoặc node tách metadata"
         },
         "yourWorkflows": "Workflow Của Bạn",
         "browseWorkflows": "Khám Phá Workflow",
@@ -2392,9 +2426,8 @@
         "watchRecentReleaseVideos": "Xem Video Phát Hành Mới Nhất",
         "watchUiUpdatesOverview": "Xem Tổng Quan Về Những Cập Nhật Cho Giao Diện Người Dùng",
         "items": [
-            "Workflow: Hỗ trợ xâu ký tự thả xuống tùy chỉnh trong Trình Tạo Vùng Nhập.",
-            "FLUX: Hỗ trợ FLUX Fill trong Workflow và Canvas.",
-            "LLaVA OneVision VLLM: Hỗ trợ phiên bản Beta trong Workflow."
+            "CogView4: Hỗ trợ model CogView4 ở Canvas và Workflow.",
+            "Cập nhật Dependency: Invoke bây giờ sẽ chạy trên phiên bản mới nhất của các dependency của nó, bao gồm Python 3.12 và Pytorch 2.6.0"
         ]
     },
     "upsell": {

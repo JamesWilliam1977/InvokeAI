@@ -20,10 +20,10 @@ import { Graph } from 'features/nodes/util/graph/generation/Graph';
 import {
   CANVAS_OUTPUT_PREFIX,
   getBoardField,
-  getPresetModifiedPrompts,
   getSizes,
+  selectPresetModifiedPrompts,
 } from 'features/nodes/util/graph/graphBuilderUtils';
-import type { ImageOutputNodes } from 'features/nodes/util/graph/types';
+import type { GraphBuilderReturn, ImageOutputNodes } from 'features/nodes/util/graph/types';
 import { selectMainModelConfig } from 'services/api/endpoints/models';
 import type { Invocation } from 'services/api/types';
 import type { Equals } from 'tsafe';
@@ -33,10 +33,7 @@ import { addRegions } from './addRegions';
 
 const log = logger('system');
 
-export const buildSD1Graph = async (
-  state: RootState,
-  manager: CanvasManager
-): Promise<{ g: Graph; noise: Invocation<'noise'>; posCond: Invocation<'compel'> }> => {
+export const buildSD1Graph = async (state: RootState, manager: CanvasManager): Promise<GraphBuilderReturn> => {
   const generationMode = await manager.compositor.getGenerationMode();
   log.debug({ generationMode }, 'Building SD1/SD2 graph');
 
@@ -62,7 +59,7 @@ export const buildSD1Graph = async (
   assert(model, 'No model found in state');
 
   const fp32 = vaePrecision === 'fp32';
-  const { positivePrompt, negativePrompt } = getPresetModifiedPrompts(state);
+  const { positivePrompt, negativePrompt } = selectPresetModifiedPrompts(state);
   const { originalSize, scaledSize } = getSizes(bbox);
 
   const g = new Graph(getPrefixedId('sd1_graph'));
@@ -316,5 +313,9 @@ export const buildSD1Graph = async (
   });
 
   g.setMetadataReceivingNode(canvasOutput);
-  return { g, noise, posCond };
+  return {
+    g,
+    seedFieldIdentifier: { nodeId: noise.id, fieldName: 'seed' },
+    positivePromptFieldIdentifier: { nodeId: posCond.id, fieldName: 'prompt' },
+  };
 };

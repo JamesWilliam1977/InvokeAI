@@ -118,6 +118,8 @@
         "error": "Error",
         "error_withCount_one": "{{count}} error",
         "error_withCount_other": "{{count}} errors",
+        "model_withCount_one": "{{count}} model",
+        "model_withCount_other": "{{count}} models",
         "file": "File",
         "folder": "Folder",
         "format": "format",
@@ -138,6 +140,8 @@
         "localSystem": "Local System",
         "learnMore": "Learn More",
         "modelManager": "Model Manager",
+        "noMatches": "No matches",
+        "noOptions": "No options",
         "nodes": "Workflows",
         "notInstalled": "Not $t(common.installed)",
         "openInNewTab": "Open in New Tab",
@@ -171,6 +175,8 @@
         "blue": "Blue",
         "alpha": "Alpha",
         "selected": "Selected",
+        "search": "Search",
+        "clear": "Clear",
         "tab": "Tab",
         "view": "View",
         "edit": "Edit",
@@ -197,7 +203,11 @@
         "column": "Column",
         "value": "Value",
         "label": "Label",
-        "systemInformation": "System Information"
+        "systemInformation": "System Information",
+        "compactView": "Compact View",
+        "fullView": "Full View",
+        "options_withCount_one": "{{count}} option",
+        "options_withCount_other": "{{count}} options"
     },
     "hrf": {
         "hrf": "High Resolution Fix",
@@ -258,6 +268,7 @@
         "status": "Status",
         "total": "Total",
         "time": "Time",
+        "credits": "Credits",
         "pending": "Pending",
         "in_progress": "In Progress",
         "completed": "Completed",
@@ -768,6 +779,7 @@
         "description": "Description",
         "edit": "Edit",
         "fileSize": "File Size",
+        "filterModels": "Filter models",
         "fluxRedux": "FLUX Redux",
         "height": "Height",
         "huggingFace": "HuggingFace",
@@ -787,6 +799,7 @@
         "hfTokenUnableToVerify": "Unable to Verify HF Token",
         "hfTokenUnableToVerifyErrorMessage": "Unable to verify HuggingFace token. This is likely due to a network error. Please try again later.",
         "hfTokenSaved": "HF Token Saved",
+        "hfTokenReset": "HF Token Reset",
         "urlUnauthorizedErrorMessage": "You may need to configure an API token to access this model.",
         "urlUnauthorizedErrorMessage2": "Learn how here.",
         "imageEncoderModelId": "Image Encoder Model ID",
@@ -821,16 +834,20 @@
         "modelUpdated": "Model Updated",
         "modelUpdateFailed": "Model Update Failed",
         "name": "Name",
-        "noModelsInstalled": "No Models Installed",
+        "modelPickerFallbackNoModelsInstalled": "No models installed.",
+        "modelPickerFallbackNoModelsInstalled2": "Visit the <LinkComponent>Model Manager</LinkComponent> to install models.",
         "noModelsInstalledDesc1": "Install models with the",
         "noModelSelected": "No Model Selected",
-        "noMatchingModels": "No matching Models",
+        "noMatchingModels": "No matching models",
+        "noModelsInstalled": "No models installed",
         "none": "none",
         "path": "Path",
         "pathToConfig": "Path To Config",
         "predictionType": "Prediction Type",
         "prune": "Prune",
         "pruneTooltip": "Prune finished imports from queue",
+        "relatedModels": "Related Models",
+        "showOnlyRelatedModels": "Related",
         "repo_id": "Repo ID",
         "repoVariant": "Repo Variant",
         "scanFolder": "Scan Folder",
@@ -871,7 +888,8 @@
         "installingXModels_one": "Installing {{count}} model",
         "installingXModels_other": "Installing {{count}} models",
         "skippingXDuplicates_one": ", skipping {{count}} duplicate",
-        "skippingXDuplicates_other": ", skipping {{count}} duplicates"
+        "skippingXDuplicates_other": ", skipping {{count}} duplicates",
+        "manageModels": "Manage Models"
     },
     "models": {
         "addLora": "Add LoRA",
@@ -1093,6 +1111,7 @@
         "info": "Info",
         "invoke": {
             "addingImagesTo": "Adding images to",
+            "modelDisabledForTrial": "Generating with {{modelName}} is not available on trial accounts. Visit your account settings to upgrade.",
             "invoke": "Invoke",
             "missingFieldTemplate": "Missing field template",
             "missingInputForField": "missing input",
@@ -1173,7 +1192,8 @@
         "width": "Width",
         "gaussianBlur": "Gaussian Blur",
         "boxBlur": "Box Blur",
-        "staged": "Staged"
+        "staged": "Staged",
+        "modelDisabledForTrial": "Generating with {{modelName}} is not available on trial accounts. Visit your <LinkComponent>account settings</LinkComponent> to upgrade."
     },
     "dynamicPrompts": {
         "showDynamicPrompts": "Show Dynamic Prompts",
@@ -1312,6 +1332,8 @@
         "unableToCopyDesc": "Your browser does not support clipboard access. Firefox users may be able to fix this by following ",
         "unableToCopyDesc_theseSteps": "these steps",
         "fluxFillIncompatibleWithT2IAndI2I": "FLUX Fill is not compatible with Text to Image or Image to Image. Use other FLUX models for these tasks.",
+        "imagenIncompatibleGenerationMode": "Google {{model}} supports Text to Image only. Use other models for Image to Image, Inpainting and Outpainting tasks.",
+        "chatGPT4oIncompatibleGenerationMode": "ChatGPT 4o supports Text to Image and Image to Image only. Use other models Inpainting and Outpainting tasks.",
         "problemUnpublishingWorkflow": "Problem Unpublishing Workflow",
         "problemUnpublishingWorkflowDescription": "There was a problem unpublishing the workflow. Please try again.",
         "workflowUnpublished": "Workflow Unpublished"
@@ -1809,7 +1831,7 @@
             "cannotPublish": "Cannot publish workflow",
             "publishWarnings": "Warnings",
             "errorWorkflowHasUnsavedChanges": "Workflow has unsaved changes",
-            "errorWorkflowHasBatchOrGeneratorNodes": "Workflow has batch and/or generator nodes",
+            "errorWorkflowHasUnpublishableNodes": "Workflow has batch, generator, or metadata extraction nodes",
             "errorWorkflowHasInvalidGraph": "Workflow graph invalid (hover Invoke button for details)",
             "errorWorkflowHasNoOutputNode": "No output node selected",
             "warningWorkflowHasNoPublishableInputFields": "No publishable input fields selected - published workflow will run with only default values",
@@ -2020,10 +2042,14 @@
             "ipAdapterMethod": "Mode",
             "full": "Style and Composition",
             "fullDesc": "Applies visual style (colors, textures) & composition (layout, structure).",
-            "style": "Style Only",
-            "styleDesc": "Applies visual style (colors, textures) without considering its layout.",
+            "style": "Style (Simple)",
+            "styleDesc": "Applies visual style (colors, textures) without considering its layout. Previously called Style Only.",
             "composition": "Composition Only",
-            "compositionDesc": "Replicates layout & structure while ignoring the reference's style."
+            "compositionDesc": "Replicates layout & structure while ignoring the reference's style.",
+            "styleStrong": "Style (Strong)",
+            "styleStrongDesc": "Applies a strong visual style, with a slightly reduced composition influence.",
+            "stylePrecise": "Style (Precise)",
+            "stylePreciseDesc": "Applies a precise visual style, eliminating subject influence."
         },
         "fluxReduxImageInfluence": {
             "imageInfluence": "Image Influence",
@@ -2393,9 +2419,9 @@
     "whatsNew": {
         "whatsNewInInvoke": "What's New in Invoke",
         "items": [
-            "Workflows: Support for custom string drop-downs in Workflow Builder.",
-            "FLUX: Support for FLUX Fill in Workflows and Canvas.",
-            "LLaVA OneVision VLLM: Beta support in Workflows."
+            "Nvidia 50xx GPUs: Invoke uses PyTorch 2.7.0, which is required for these GPUs.",
+            "Model Relationships: Link LoRAs to main models, and the LoRAs will show up first in the list.",
+            "IP Adapter: New Style (Strong) and Style (Precise) methods for SDXL and SD1.5 models."
         ],
         "readReleaseNotes": "Read Release Notes",
         "watchRecentReleaseVideos": "Watch Recent Release Videos",

@@ -6,7 +6,7 @@ import type { Coordinate, Dimensions, Rect, StageAttrs } from 'features/controlL
 import Konva from 'konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 import { clamp } from 'lodash-es';
-import { atom } from 'nanostores';
+import { atom, computed } from 'nanostores';
 import type { Logger } from 'roarr';
 
 type CanvasStageModuleConfig = {
@@ -22,12 +22,27 @@ type CanvasStageModuleConfig = {
    * The factor by which the canvas should be scaled when zooming in/out
    */
   SCALE_FACTOR: number;
+  /**
+   * The padding in pixels to use when fitting the layers to the stage.
+   */
+  FIT_LAYERS_TO_STAGE_PADDING_PX: number;
+  /**
+   * The snap points for the scale of the canvas.
+   */
+  SCALE_SNAP_POINTS: number[];
+  /**
+   * The tolerance for snapping the scale of the canvas, as a fraction of the scale.
+   */
+  SCALE_SNAP_TOLERANCE: number;
 };
 
 const DEFAULT_CONFIG: CanvasStageModuleConfig = {
   MIN_SCALE: 0.1,
   MAX_SCALE: 20,
   SCALE_FACTOR: 0.999,
+  FIT_LAYERS_TO_STAGE_PADDING_PX: 48,
+  SCALE_SNAP_POINTS: [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5],
+  SCALE_SNAP_TOLERANCE: 0.05,
 };
 
 export class CanvasStageModule extends CanvasModuleBase {
@@ -37,6 +52,11 @@ export class CanvasStageModule extends CanvasModuleBase {
   readonly parent: CanvasManager;
   readonly manager: CanvasManager;
   readonly log: Logger;
+
+  // State for scale snapping logic
+  private _intendedScale: number = 1;
+  private _activeSnapPoint: number | null = null;
+  private _snapTimeout: number | null = null;
 
   container: HTMLDivElement;
   konva: { stage: Konva.Stage };
@@ -50,6 +70,7 @@ export class CanvasStageModule extends CanvasModuleBase {
     height: 0,
     scale: 0,
   });
+  $scale = computed(this.$stageAttrs, (attrs) => attrs.scale);
 
   subscriptions = new Set<() => void>();
   resizeObserver: ResizeObserver | null = null;
@@ -71,6 +92,9 @@ export class CanvasStageModule extends CanvasModuleBase {
         container,
       }),
     };
+
+    // Initialize intended scale to the default stage scale
+    this._intendedScale = this.konva.stage.scaleX();
   }
 
   setContainer = (container: HTMLDivElement) => {
@@ -175,18 +199,24 @@ export class CanvasStageModule extends CanvasModuleBase {
       return;
     }
 
-    const padding = 20; // Padding in absolute pixels
-
-    const availableWidth = width - padding * 2;
-    const availableHeight = height - padding * 2;
+    const availableWidth = width - this.config.FIT_LAYERS_TO_STAGE_PADDING_PX * 2;
+    const availableHeight = height - this.config.FIT_LAYERS_TO_STAGE_PADDING_PX * 2;
 
     // Make sure we don't accidentally set the scale to something nonsensical, like a negative number, 0 or something
     // outside the valid range
     const scale = this.constrainScale(
       Math.min(Math.min(availableWidth / rect.width, availableHeight / rect.height), 1)
     );
-    const x = Math.floor(-rect.x * scale + padding + (availableWidth - rect.width * scale) / 2);
-    const y = Math.floor(-rect.y * scale + padding + (availableHeight - rect.height * scale) / 2);
+    const x = Math.floor(
+      -rect.x * scale + this.config.FIT_LAYERS_TO_STAGE_PADDING_PX + (availableWidth - rect.width * scale) / 2
+    );
+    const y = Math.floor(
+      -rect.y * scale + this.config.FIT_LAYERS_TO_STAGE_PADDING_PX + (availableHeight - rect.height * scale) / 2
+    );
+
+    // When fitting the stage, we update the intended scale and reset any active snap.
+    this._intendedScale = scale;
+    this._activeSnapPoint = null;
 
     this.konva.stage.setAttrs({
       x,
@@ -223,26 +253,41 @@ export class CanvasStageModule extends CanvasModuleBase {
    * Constrains a scale to be within the valid range
    */
   constrainScale = (scale: number): number => {
-    return clamp(Math.round(scale * 100) / 100, this.config.MIN_SCALE, this.config.MAX_SCALE);
+    return clamp(scale, this.config.MIN_SCALE, this.config.MAX_SCALE);
   };
 
   /**
-   * Sets the scale of the stage. If center is provided, the stage will zoom in/out on that point.
-   * @param scale The new scale to set
-   * @param center The center of the stage to zoom in/out on
+   * Programmatically sets the scale of the stage, overriding any active snapping.
+   * If a center point is provided, the stage will zoom on that point.
+   * @param scale The new scale to set.
+   * @param center The center point for the zoom.
    */
-  setScale = (scale: number, center: Coordinate = this.getCenter(true)): void => {
-    this.log.trace('Setting scale');
+  setScale = (scale: number, center?: Coordinate): void => {
+    this.log.trace({ scale }, 'Programmatically setting scale');
     const newScale = this.constrainScale(scale);
 
-    const { x, y } = this.getPosition();
+    // When scale is set programmatically, update the intended scale and reset any active snap.
+    this._intendedScale = newScale;
+    this._activeSnapPoint = null;
+
+    this._applyScale(newScale, center);
+  };
+
+  /**
+   * Applies a scale to the stage, adjusting the position to keep the given center point stationary.
+   * This internal method does NOT modify snapping state.
+   */
+  private _applyScale = (newScale: number, center?: Coordinate): void => {
     const oldScale = this.getScale();
 
-    const deltaX = (center.x - x) / oldScale;
-    const deltaY = (center.y - y) / oldScale;
+    const _center = center ?? this.getCenter(true);
+    const { x, y } = this.getPosition();
 
-    const newX = Math.floor(center.x - deltaX * newScale);
-    const newY = Math.floor(center.y - deltaY * newScale);
+    const deltaX = (_center.x - x) / oldScale;
+    const deltaY = (_center.y - y) / oldScale;
+
+    const newX = _center.x - deltaX * newScale;
+    const newY = _center.y - deltaY * newScale;
 
     this.konva.stage.setAttrs({
       x: newX,
@@ -256,6 +301,7 @@ export class CanvasStageModule extends CanvasModuleBase {
 
   onStageMouseWheel = (e: KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault();
+    this._snapTimeout && window.clearTimeout(this._snapTimeout);
 
     if (e.evt.ctrlKey || e.evt.metaKey) {
       return;
@@ -264,12 +310,59 @@ export class CanvasStageModule extends CanvasModuleBase {
     // We need the absolute cursor position - not the scaled position
     const cursorPos = this.konva.stage.getPointerPosition();
 
-    if (cursorPos) {
-      // When wheeling on trackpad, e.evt.ctrlKey is true - in that case, let's reverse the direction
-      const delta = e.evt.ctrlKey ? -e.evt.deltaY : e.evt.deltaY;
-      const scale = this.manager.stage.getScale() * this.config.SCALE_FACTOR ** delta;
-      this.manager.stage.setScale(scale, cursorPos);
+    if (!cursorPos) {
+      return;
     }
+
+    // When wheeling on trackpad, e.evt.ctrlKey is true - in that case, let's reverse the direction
+    const delta = e.evt.ctrlKey ? -e.evt.deltaY : e.evt.deltaY;
+
+    // Update the intended scale based on the last intended scale, creating a continuous zoom feel
+    const newIntendedScale = this._intendedScale * this.config.SCALE_FACTOR ** delta;
+    this._intendedScale = this.constrainScale(newIntendedScale);
+
+    // Pass control to the snapping logic
+    this._updateScaleWithSnapping(cursorPos);
+
+    this._snapTimeout = window.setTimeout(() => {
+      // After a short delay, we can reset the intended scale to the current scale
+      // This allows for continuous zooming without snapping back to the last snapped scale
+      this._intendedScale = this.getScale();
+    }, 100);
+  };
+
+  /**
+   * Implements "sticky" snap logic.
+   * - If not snapped, checks if the intended scale is close enough to a snap point to engage the snap.
+   * - If snapped, checks if the intended scale has moved far enough away to break the snap.
+   * - Applies the resulting scale to the stage.
+   */
+  private _updateScaleWithSnapping = (center: Coordinate) => {
+    // If we are currently snapped, check if we should break out
+    if (this._activeSnapPoint !== null) {
+      const threshold = this._activeSnapPoint * this.config.SCALE_SNAP_TOLERANCE;
+      if (Math.abs(this._intendedScale - this._activeSnapPoint) > threshold) {
+        // User has scrolled far enough to break the snap
+        this._activeSnapPoint = null;
+        this._applyScale(this._intendedScale, center);
+      }
+      // Else, do nothing - we remain snapped at the current scale, creating a "dead zone"
+      return;
+    }
+
+    // If we are not snapped, check if we should snap to a point
+    for (const snapPoint of this.config.SCALE_SNAP_POINTS) {
+      const threshold = snapPoint * this.config.SCALE_SNAP_TOLERANCE;
+      if (Math.abs(this._intendedScale - snapPoint) < threshold) {
+        // Engage the snap
+        this._activeSnapPoint = snapPoint;
+        this._applyScale(snapPoint, center);
+        return;
+      }
+    }
+
+    // If we are not snapping and not breaking a snap, just update to the intended scale
+    this._applyScale(this._intendedScale, center);
   };
 
   onStagePointerDown = (e: KonvaEventObject<PointerEvent>) => {

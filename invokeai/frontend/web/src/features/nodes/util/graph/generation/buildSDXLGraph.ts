@@ -20,10 +20,10 @@ import { Graph } from 'features/nodes/util/graph/generation/Graph';
 import {
   CANVAS_OUTPUT_PREFIX,
   getBoardField,
-  getPresetModifiedPrompts,
   getSizes,
+  selectPresetModifiedPrompts,
 } from 'features/nodes/util/graph/graphBuilderUtils';
-import type { ImageOutputNodes } from 'features/nodes/util/graph/types';
+import type { GraphBuilderReturn, ImageOutputNodes } from 'features/nodes/util/graph/types';
 import { selectMainModelConfig } from 'services/api/endpoints/models';
 import type { Invocation } from 'services/api/types';
 import type { Equals } from 'tsafe';
@@ -33,10 +33,7 @@ import { addRegions } from './addRegions';
 
 const log = logger('system');
 
-export const buildSDXLGraph = async (
-  state: RootState,
-  manager: CanvasManager
-): Promise<{ g: Graph; noise: Invocation<'noise'>; posCond: Invocation<'sdxl_compel_prompt'> }> => {
+export const buildSDXLGraph = async (state: RootState, manager: CanvasManager): Promise<GraphBuilderReturn> => {
   const generationMode = await manager.compositor.getGenerationMode();
   log.debug({ generationMode }, 'Building SDXL graph');
 
@@ -67,7 +64,8 @@ export const buildSDXLGraph = async (
 
   const fp32 = vaePrecision === 'fp32';
   const { originalSize, scaledSize } = getSizes(bbox);
-  const { positivePrompt, negativePrompt, positiveStylePrompt, negativeStylePrompt } = getPresetModifiedPrompts(state);
+  const { positivePrompt, negativePrompt, positiveStylePrompt, negativeStylePrompt } =
+    selectPresetModifiedPrompts(state);
 
   const g = new Graph(getPrefixedId('sdxl_graph'));
   const modelLoader = g.addNode({
@@ -207,6 +205,7 @@ export const buildSDXLGraph = async (
       scaledSize,
       denoising_start,
       fp32,
+      seed,
     });
     g.upsertMetadata({ generation_mode: 'sdxl_inpaint' });
   } else if (generationMode === 'outpaint') {
@@ -223,6 +222,7 @@ export const buildSDXLGraph = async (
       scaledSize,
       denoising_start,
       fp32,
+      seed,
     });
     g.upsertMetadata({ generation_mode: 'sdxl_outpaint' });
   } else {
@@ -322,5 +322,9 @@ export const buildSDXLGraph = async (
   });
 
   g.setMetadataReceivingNode(canvasOutput);
-  return { g, noise, posCond };
+  return {
+    g,
+    seedFieldIdentifier: { nodeId: noise.id, fieldName: 'seed' },
+    positivePromptFieldIdentifier: { nodeId: posCond.id, fieldName: 'prompt' },
+  };
 };

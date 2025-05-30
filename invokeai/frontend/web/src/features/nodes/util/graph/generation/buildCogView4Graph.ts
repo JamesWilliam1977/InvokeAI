@@ -16,10 +16,10 @@ import { Graph } from 'features/nodes/util/graph/generation/Graph';
 import {
   CANVAS_OUTPUT_PREFIX,
   getBoardField,
-  getPresetModifiedPrompts,
   getSizes,
+  selectPresetModifiedPrompts,
 } from 'features/nodes/util/graph/graphBuilderUtils';
-import type { ImageOutputNodes } from 'features/nodes/util/graph/types';
+import type { GraphBuilderReturn, ImageOutputNodes } from 'features/nodes/util/graph/types';
 import type { Invocation } from 'services/api/types';
 import { isNonRefinerMainModelConfig } from 'services/api/types';
 import type { Equals } from 'tsafe';
@@ -27,10 +27,7 @@ import { assert } from 'tsafe';
 
 const log = logger('system');
 
-export const buildCogView4Graph = async (
-  state: RootState,
-  manager: CanvasManager
-): Promise<{ g: Graph; noise: Invocation<'cogview4_denoise'>; posCond: Invocation<'cogview4_text_encoder'> }> => {
+export const buildCogView4Graph = async (state: RootState, manager: CanvasManager): Promise<GraphBuilderReturn> => {
   const generationMode = await manager.compositor.getGenerationMode();
   log.debug({ generationMode }, 'Building CogView4 graph');
 
@@ -45,7 +42,7 @@ export const buildCogView4Graph = async (
   assert(model, 'No model found in state');
 
   const { originalSize, scaledSize } = getSizes(bbox);
-  const { positivePrompt, negativePrompt } = getPresetModifiedPrompts(state);
+  const { positivePrompt, negativePrompt } = selectPresetModifiedPrompts(state);
 
   const g = new Graph(getPrefixedId('cogview4_graph'));
   const modelLoader = g.addNode({
@@ -140,6 +137,7 @@ export const buildCogView4Graph = async (
       scaledSize,
       denoising_start,
       fp32: false,
+      seed,
     });
     g.upsertMetadata({ generation_mode: 'cogview4_inpaint' });
   } else if (generationMode === 'outpaint') {
@@ -156,6 +154,7 @@ export const buildCogView4Graph = async (
       scaledSize,
       denoising_start,
       fp32: false,
+      seed,
     });
     g.upsertMetadata({ generation_mode: 'cogview4_outpaint' });
   } else {
@@ -186,5 +185,9 @@ export const buildCogView4Graph = async (
   });
 
   g.setMetadataReceivingNode(canvasOutput);
-  return { g, noise: denoise, posCond };
+  return {
+    g,
+    seedFieldIdentifier: { nodeId: denoise.id, fieldName: 'seed' },
+    positivePromptFieldIdentifier: { nodeId: posCond.id, fieldName: 'prompt' },
+  };
 };

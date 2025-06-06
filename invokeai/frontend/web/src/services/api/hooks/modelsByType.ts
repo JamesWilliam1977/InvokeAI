@@ -9,6 +9,7 @@ import {
 } from 'services/api/endpoints/models';
 import type { AnyModelConfig } from 'services/api/types';
 import {
+  isChatGPT4oModelConfig,
   isCLIPEmbedModelConfig,
   isCLIPVisionModelConfig,
   isCogView4MainModelModelConfig,
@@ -18,6 +19,8 @@ import {
   isFluxMainModelModelConfig,
   isFluxReduxModelConfig,
   isFluxVAEModelConfig,
+  isImagen3ModelConfig,
+  isImagen4ModelConfig,
   isIPAdapterModelConfig,
   isLLaVAModelConfig,
   isLoRAModelConfig,
@@ -56,7 +59,6 @@ const buildModelsHook =
 
     return [modelConfigs, result] as const;
   };
-
 export const useMainModels = buildModelsHook(isNonRefinerMainModelConfig);
 export const useNonSDXLMainModels = buildModelsHook(isNonSDXLMainModelConfig);
 export const useRefinerModels = buildModelsHook(isRefinerMainModelModelConfig);
@@ -82,10 +84,16 @@ export const useFluxVAEModels = (args?: ModelHookArgs) =>
 export const useCLIPVisionModels = buildModelsHook(isCLIPVisionModelConfig);
 export const useSigLipModels = buildModelsHook(isSigLipModelConfig);
 export const useFluxReduxModels = buildModelsHook(isFluxReduxModelConfig);
-export const useIPAdapterOrFLUXReduxModels = buildModelsHook(
+export const useGlobalReferenceImageModels = buildModelsHook(
+  (config) => isIPAdapterModelConfig(config) || isFluxReduxModelConfig(config) || isChatGPT4oModelConfig(config)
+);
+export const useRegionalReferenceImageModels = buildModelsHook(
   (config) => isIPAdapterModelConfig(config) || isFluxReduxModelConfig(config)
 );
 export const useLLaVAModels = buildModelsHook(isLLaVAModelConfig);
+export const useImagen3Models = buildModelsHook(isImagen3ModelConfig);
+export const useImagen4Models = buildModelsHook(isImagen4ModelConfig);
+export const useChatGPT4oModels = buildModelsHook(isChatGPT4oModelConfig);
 
 // const buildModelsSelector =
 //   <T extends AnyModelConfig>(typeGuard: (config: AnyModelConfig) => config is T): Selector<RootState, T[]> =>

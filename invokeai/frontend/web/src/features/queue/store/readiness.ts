@@ -31,8 +31,10 @@ import type { WorkflowSettingsState } from 'features/nodes/store/workflowSetting
 import { selectWorkflowSettingsSlice } from 'features/nodes/store/workflowSettingsSlice';
 import { isBatchNode, isExecutableNode, isInvocationNode } from 'features/nodes/types/invocation';
 import { resolveBatchValue } from 'features/nodes/util/node/resolveBatchValue';
+import { useIsModelDisabled } from 'features/parameters/hooks/useIsModelDisabled';
 import type { UpscaleState } from 'features/parameters/store/upscaleSlice';
 import { selectUpscaleSlice } from 'features/parameters/store/upscaleSlice';
+import type { ParameterModel } from 'features/parameters/types/parameterSchemas';
 import { getGridSize } from 'features/parameters/util/optimalDimension';
 import { selectConfigSlice } from 'features/system/store/configSlice';
 import { selectActiveTab } from 'features/ui/store/uiSelectors';
@@ -87,7 +89,8 @@ const debouncedUpdateReasons = debounce(
     upscale: UpscaleState,
     config: AppConfig,
     store: AppStore,
-    isInPublishFlow: boolean
+    isInPublishFlow: boolean,
+    isChatGPT4oHighModelDisabled: (model: ParameterModel) => boolean
   ) => {
     if (tab === 'canvas') {
       const model = selectMainModelConfig(store.getState());
@@ -102,6 +105,7 @@ const debouncedUpdateReasons = debounce(
         canvasIsRasterizing,
         canvasIsCompositing,
         canvasIsSelectingObject,
+        isChatGPT4oHighModelDisabled,
       });
       $reasonsWhyCannotEnqueue.set(reasons);
     } else if (tab === 'workflows') {
@@ -149,6 +153,7 @@ export const useReadinessWatcher = () => {
   const canvasIsSelectingObject = useStore(canvasManager?.stateApi.$isSegmenting ?? $true);
   const canvasIsCompositing = useStore(canvasManager?.compositor.$isBusy ?? $true);
   const isInPublishFlow = useStore($isInPublishFlow);
+  const { isChatGPT4oHighModelDisabled } = useIsModelDisabled();
 
   useEffect(() => {
     debouncedUpdateReasons(
@@ -168,7 +173,8 @@ export const useReadinessWatcher = () => {
       upscale,
       config,
       store,
-      isInPublishFlow
+      isInPublishFlow,
+      isChatGPT4oHighModelDisabled
     );
   }, [
     store,
@@ -188,6 +194,7 @@ export const useReadinessWatcher = () => {
     upscale,
     workflowSettings,
     isInPublishFlow,
+    isChatGPT4oHighModelDisabled,
   ]);
 };
 
@@ -335,6 +342,7 @@ const getReasonsWhyCannotEnqueueCanvasTab = (arg: {
   canvasIsRasterizing: boolean;
   canvasIsCompositing: boolean;
   canvasIsSelectingObject: boolean;
+  isChatGPT4oHighModelDisabled: (model: ParameterModel) => boolean;
 }) => {
   const {
     isConnected,
@@ -347,6 +355,7 @@ const getReasonsWhyCannotEnqueueCanvasTab = (arg: {
     canvasIsRasterizing,
     canvasIsCompositing,
     canvasIsSelectingObject,
+    isChatGPT4oHighModelDisabled,
   } = arg;
   const { positivePrompt } = params;
   const reasons: Reason[] = [];
@@ -477,6 +486,10 @@ const getReasonsWhyCannotEnqueueCanvasTab = (arg: {
         });
       }
     }
+  }
+
+  if (model && isChatGPT4oHighModelDisabled(model)) {
+    reasons.push({ content: i18n.t('parameters.invoke.modelDisabledForTrial', { modelName: model.name }) });
   }
 
   const enabledControlLayers = canvas.controlLayers.entities.filter((controlLayer) => controlLayer.isEnabled);

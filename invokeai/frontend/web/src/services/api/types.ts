@@ -1,3 +1,4 @@
+import type { Dimensions } from 'features/controlLayers/store/types';
 import type { components, paths } from 'services/api/schema';
 import type { JsonObject, SetRequired } from 'type-fest';
 
@@ -65,7 +66,8 @@ export type CheckpointModelConfig = S['MainCheckpointConfig'];
 type CLIPVisionDiffusersConfig = S['CLIPVisionDiffusersConfig'];
 export type SigLipModelConfig = S['SigLIPConfig'];
 export type FLUXReduxModelConfig = S['FluxReduxConfig'];
-export type MainModelConfig = DiffusersModelConfig | CheckpointModelConfig;
+export type ApiModelConfig = S['ApiModelConfig'];
+export type MainModelConfig = DiffusersModelConfig | CheckpointModelConfig | ApiModelConfig;
 export type AnyModelConfig =
   | ControlLoRAModelConfig
   | LoRAModelConfig
@@ -227,6 +229,18 @@ export const isFluxReduxModelConfig = (config: AnyModelConfig): config is FLUXRe
   return config.type === 'flux_redux';
 };
 
+export const isChatGPT4oModelConfig = (config: AnyModelConfig): config is ApiModelConfig => {
+  return config.type === 'main' && config.base === 'chatgpt-4o';
+};
+
+export const isImagen3ModelConfig = (config: AnyModelConfig): config is ApiModelConfig => {
+  return config.type === 'main' && config.base === 'imagen3';
+};
+
+export const isImagen4ModelConfig = (config: AnyModelConfig): config is ApiModelConfig => {
+  return config.type === 'main' && config.base === 'imagen4';
+};
+
 export const isNonRefinerMainModelConfig = (config: AnyModelConfig): config is MainModelConfig => {
   return config.type === 'main' && config.base !== 'sdxl-refiner';
 };
@@ -316,6 +330,9 @@ export type GetHFTokenStatusResponse =
 export type SetHFTokenResponse = NonNullable<
   paths['/api/v2/models/hf_login']['post']['responses']['200']['content']['application/json']
 >;
+export type ResetHFTokenResponse = NonNullable<
+  paths['/api/v2/models/hf_login']['delete']['responses']['200']['content']['application/json']
+>;
 export type SetHFTokenArg = NonNullable<
   paths['/api/v2/models/hf_login']['post']['requestBody']['content']['application/json']
 >;
@@ -357,6 +374,10 @@ export type UploadImageArg = {
    * Whether this is the first upload of a batch (used when displaying user feedback with toasts - ignored if the upload is silent)
    */
   isFirstUploadOfBatch?: boolean;
+  /**
+   * If provided, the uploaded image will resized to the given dimensions.
+   */
+  resize_to?: Dimensions;
 };
 
 export type ImageUploadEntryResponse = S['ImageUploadEntry'];

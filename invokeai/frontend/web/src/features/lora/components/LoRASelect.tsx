@@ -3,7 +3,7 @@ import { Combobox, FormControl, FormLabel } from '@invoke-ai/ui-library';
 import { createSelector } from '@reduxjs/toolkit';
 import { useAppDispatch, useAppSelector } from 'app/store/storeHooks';
 import { InformationalPopover } from 'common/components/InformationalPopover/InformationalPopover';
-import { useGroupedModelCombobox } from 'common/hooks/useGroupedModelCombobox';
+import { useRelatedGroupedModelCombobox } from 'common/hooks/useRelatedGroupedModelCombobox';
 import { loraAdded, selectLoRAsSlice } from 'features/controlLayers/store/lorasSlice';
 import { selectBase } from 'features/controlLayers/store/paramsSlice';
 import { memo, useCallback, useMemo } from 'react';
@@ -37,7 +37,7 @@ const LoRASelect = () => {
     [dispatch]
   );
 
-  const { options, onChange } = useGroupedModelCombobox({
+  const { options, onChange } = useRelatedGroupedModelCombobox({
     modelConfigs,
     getIsDisabled,
     onChange: _onChange,
@@ -58,7 +58,7 @@ const LoRASelect = () => {
   const noOptionsMessage = useCallback(() => t('models.noMatchingLoRAs'), [t]);
 
   return (
-    <FormControl isDisabled={!options.length}>
+    <FormControl isDisabled={!options.length} gap={2}>
       <InformationalPopover feature="lora">
         <FormLabel>{t('models.concepts')} </FormLabel>
       </InformationalPopover>

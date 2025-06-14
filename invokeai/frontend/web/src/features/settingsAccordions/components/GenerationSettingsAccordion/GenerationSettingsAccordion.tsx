@@ -11,11 +11,12 @@ import ParamCFGScale from 'features/parameters/components/Core/ParamCFGScale';
 import ParamGuidance from 'features/parameters/components/Core/ParamGuidance';
 import ParamScheduler from 'features/parameters/components/Core/ParamScheduler';
 import ParamSteps from 'features/parameters/components/Core/ParamSteps';
-import { NavigateToModelManagerButton } from 'features/parameters/components/MainModel/NavigateToModelManagerButton';
-import ParamMainModelSelect from 'features/parameters/components/MainModel/ParamMainModelSelect';
-import { UseDefaultSettingsButton } from 'features/parameters/components/MainModel/UseDefaultSettingsButton';
+import { DisabledModelWarning } from 'features/parameters/components/MainModel/DisabledModelWarning';
 import ParamUpscaleCFGScale from 'features/parameters/components/Upscale/ParamUpscaleCFGScale';
 import ParamUpscaleScheduler from 'features/parameters/components/Upscale/ParamUpscaleScheduler';
+import { useIsApiModel } from 'features/parameters/hooks/useIsApiModel';
+import { API_BASE_MODELS } from 'features/parameters/types/constants';
+import { MainModelPicker } from 'features/settingsAccordions/components/GenerationSettingsAccordion/MainModelPicker';
 import { useExpanderToggle } from 'features/settingsAccordions/hooks/useExpanderToggle';
 import { useStandaloneAccordionToggle } from 'features/settingsAccordions/hooks/useStandaloneAccordionToggle';
 import { selectActiveTab } from 'features/ui/store/uiSelectors';
@@ -36,6 +37,8 @@ export const GenerationSettingsAccordion = memo(() => {
   const isSD3 = useAppSelector(selectIsSD3);
   const isCogView4 = useAppSelector(selectIsCogView4);
 
+  const isApiModel = useIsApiModel();
+
   const isUpscaling = useMemo(() => {
     return activeTabName === 'upscaling';
   }, [activeTabName]);
@@ -44,7 +47,12 @@ export const GenerationSettingsAccordion = memo(() => {
       createMemoizedSelector(selectLoRAsSlice, (loras) => {
         const enabledLoRAsCount = loras.loras.filter((l) => l.isEnabled).length;
         const loraTabBadges = enabledLoRAsCount ? [`${enabledLoRAsCount} ${t('models.concepts')}`] : EMPTY_ARRAY;
-        const accordionBadges = modelConfig ? [modelConfig.name, modelConfig.base] : EMPTY_ARRAY;
+        const accordionBadges =
+          modelConfig && API_BASE_MODELS.includes(modelConfig.base)
+            ? [modelConfig.name]
+            : modelConfig
+              ? [modelConfig.name, modelConfig.base]
+              : EMPTY_ARRAY;
         return { loraTabBadges, accordionBadges };
       }),
     [modelConfig, t]
@@ -67,31 +75,26 @@ export const GenerationSettingsAccordion = memo(() => {
       onToggle={onToggleAccordion}
     >
       <Box px={4} pt={4} data-testid="generation-accordion">
-        <Flex gap={4} flexDir="column">
-          <Flex gap={4} alignItems="center">
-            <ParamMainModelSelect />
-            <Flex>
-              <UseDefaultSettingsButton />
-              <NavigateToModelManagerButton />
-            </Flex>
-          </Flex>
-          <Flex gap={4} flexDir="column">
-            <LoRASelect />
-            <LoRAList />
-          </Flex>
+        <Flex gap={4} flexDir="column" pb={isApiModel ? 4 : 0}>
+          <DisabledModelWarning />
+          <MainModelPicker />
+          {!isApiModel && <LoRASelect />}
+          {!isApiModel && <LoRAList />}
         </Flex>
-        <Expander label={t('accordions.advanced.options')} isOpen={isOpenExpander} onToggle={onToggleExpander}>
-          <Flex gap={4} flexDir="column" pb={4}>
-            <FormControlGroup formLabelProps={formLabelProps}>
-              {!isFLUX && !isSD3 && !isCogView4 && !isUpscaling && <ParamScheduler />}
-              {isUpscaling && <ParamUpscaleScheduler />}
-              <ParamSteps />
-              {isFLUX && modelConfig && !isFluxFillMainModelModelConfig(modelConfig) && <ParamGuidance />}
-              {isUpscaling && <ParamUpscaleCFGScale />}
-              {!isFLUX && !isUpscaling && <ParamCFGScale />}
-            </FormControlGroup>
-          </Flex>
-        </Expander>
+        {!isApiModel && (
+          <Expander label={t('accordions.advanced.options')} isOpen={isOpenExpander} onToggle={onToggleExpander}>
+            <Flex gap={4} flexDir="column" pb={4}>
+              <FormControlGroup formLabelProps={formLabelProps}>
+                {!isFLUX && !isSD3 && !isCogView4 && !isUpscaling && <ParamScheduler />}
+                {isUpscaling && <ParamUpscaleScheduler />}
+                <ParamSteps />
+                {isFLUX && modelConfig && !isFluxFillMainModelModelConfig(modelConfig) && <ParamGuidance />}
+                {isUpscaling && <ParamUpscaleCFGScale />}
+                {!isFLUX && !isUpscaling && <ParamCFGScale />}
+              </FormControlGroup>
+            </Flex>
+          </Expander>
+        )}
       </Box>
     </StandaloneAccordion>
   );

@@ -4,6 +4,7 @@ import { useAppSelector } from 'app/store/storeHooks';
 import { overlayScrollbarsParams } from 'common/components/OverlayScrollbars/constants';
 import { selectIsCogView4, selectIsSDXL } from 'features/controlLayers/store/paramsSlice';
 import { Prompts } from 'features/parameters/components/Prompts/Prompts';
+import { useIsApiModel } from 'features/parameters/hooks/useIsApiModel';
 import { AdvancedSettingsAccordion } from 'features/settingsAccordions/components/AdvancedSettingsAccordion/AdvancedSettingsAccordion';
 import { CompositingSettingsAccordion } from 'features/settingsAccordions/components/CompositingSettingsAccordion/CompositingSettingsAccordion';
 import { GenerationSettingsAccordion } from 'features/settingsAccordions/components/GenerationSettingsAccordion/GenerationSettingsAccordion';
@@ -26,6 +27,8 @@ const ParametersPanelTextToImage = () => {
   const isCogview4 = useAppSelector(selectIsCogView4);
   const isStylePresetsMenuOpen = useStore($isStylePresetsMenuOpen);
 
+  const isApiModel = useIsApiModel();
+
   return (
     <Flex w="full" h="full" flexDir="column" gap={2}>
       <StylePresetMenuTrigger />
@@ -43,9 +46,9 @@ const ParametersPanelTextToImage = () => {
               <Prompts />
               <ImageSettingsAccordion />
               <GenerationSettingsAccordion />
-              <CompositingSettingsAccordion />
+              {!isApiModel && <CompositingSettingsAccordion />}
               {isSDXL && <RefinerSettingsAccordion />}
-              {!isCogview4 && <AdvancedSettingsAccordion />}
+              {!isCogview4 && !isApiModel && <AdvancedSettingsAccordion />}
             </Flex>
           </OverlayScrollbarsComponent>
         </Box>

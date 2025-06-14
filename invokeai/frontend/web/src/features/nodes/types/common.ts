@@ -8,6 +8,11 @@ export const zImageField = z.object({
   image_name: z.string().trim().min(1),
 });
 export type ImageField = z.infer<typeof zImageField>;
+export const isImageField = (field: unknown): field is ImageField => zImageField.safeParse(field).success;
+const zImageFieldCollection = z.array(zImageField);
+type ImageFieldCollection = z.infer<typeof zImageFieldCollection>;
+export const isImageFieldCollection = (field: unknown): field is ImageFieldCollection =>
+  zImageFieldCollection.safeParse(field).success;
 
 export const zBoardField = z.object({
   board_id: z.string().trim().min(1),
@@ -61,8 +66,31 @@ export type SchedulerField = z.infer<typeof zSchedulerField>;
 // #endregion
 
 // #region Model-related schemas
-const zBaseModel = z.enum(['any', 'sd-1', 'sd-2', 'sd-3', 'sdxl', 'sdxl-refiner', 'flux', 'cogview4']);
-export const zMainModelBase = z.enum(['sd-1', 'sd-2', 'sd-3', 'sdxl', 'flux', 'cogview4']);
+const zBaseModel = z.enum([
+  'any',
+  'sd-1',
+  'sd-2',
+  'sd-3',
+  'sdxl',
+  'sdxl-refiner',
+  'flux',
+  'cogview4',
+  'imagen3',
+  'imagen4',
+  'chatgpt-4o',
+]);
+export type BaseModelType = z.infer<typeof zBaseModel>;
+export const zMainModelBase = z.enum([
+  'sd-1',
+  'sd-2',
+  'sd-3',
+  'sdxl',
+  'flux',
+  'cogview4',
+  'imagen3',
+  'imagen4',
+  'chatgpt-4o',
+]);
 export type MainModelBase = z.infer<typeof zMainModelBase>;
 export const isMainModelBase = (base: unknown): base is MainModelBase => zMainModelBase.safeParse(base).success;
 const zModelType = z.enum([
@@ -98,6 +126,7 @@ const zSubModelType = z.enum([
   'scheduler',
   'safety_checker',
 ]);
+export type SubModelType = z.infer<typeof zSubModelType>;
 export const zModelIdentifierField = z.object({
   key: z.string().min(1),
   hash: z.string().min(1),
@@ -129,7 +158,7 @@ export const zIPAdapterField = z.object({
   image: zImageField,
   ip_adapter_model: zModelIdentifierField,
   weight: z.number(),
-  method: z.enum(['full', 'style', 'composition']),
+  method: z.enum(['full', 'style', 'composition', 'style_strong', 'style_precise']),
   begin_step_percent: z.number().optional(),
   end_step_percent: z.number().optional(),
 });

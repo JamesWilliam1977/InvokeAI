@@ -13,7 +13,7 @@ import {
   roundRect,
 } from 'features/controlLayers/konva/util';
 import { selectSelectedEntityIdentifier } from 'features/controlLayers/store/selectors';
-import type { Coordinate, Rect, RectWithRotation } from 'features/controlLayers/store/types';
+import type { Coordinate, LifecycleCallback, Rect, RectWithRotation } from 'features/controlLayers/store/types';
 import { toast } from 'features/toast/toast';
 import Konva from 'konva';
 import type { GroupConfig } from 'konva/lib/Group';
@@ -123,7 +123,7 @@ export class CanvasEntityTransformer extends CanvasModuleBase {
   /**
    * Whether the transformer is currently calculating the rect of the parent.
    */
-  $isPendingRectCalculation = atom<boolean>(true);
+  $isPendingRectCalculation = atom<boolean>(false);
 
   /**
    * A set of subscriptions that should be cleaned up when the transformer is destroyed.
@@ -176,6 +176,11 @@ export class CanvasEntityTransformer extends CanvasModuleBase {
    * The mutex is locked during transformation and during rect calculations which are handled in a web worker.
    */
   transformMutex = new Mutex();
+
+  /**
+   * Callbacks that are executed when the bbox is updated.
+   */
+  private static bboxUpdatedCallbacks = new Set<LifecycleCallback>();
 
   konva: {
     transformer: Konva.Transformer;
@@ -346,7 +351,7 @@ export class CanvasEntityTransformer extends CanvasModuleBase {
 
     // If the user is not holding shift, the transform is retaining aspect ratio. It's not possible to snap to the grid
     // in this case, because that would change the aspect ratio. So, we only snap to the grid when shift is held.
-    const gridSize = this.manager.stateApi.$shiftKey.get() ? this.manager.stateApi.getGridSize() : 1;
+    const gridSize = this.manager.stateApi.$shiftKey.get() ? this.manager.stateApi.getPositionGridSize() : 1;
 
     // We need to snap the anchor to the selected grid size, but the positions provided to this callback are absolute,
     // scaled coordinates. They need to be converted to stage coordinates, snapped, then converted back to absolute
@@ -464,7 +469,7 @@ export class CanvasEntityTransformer extends CanvasModuleBase {
       return;
     }
     const { rect } = this.manager.stateApi.getBbox();
-    const gridSize = this.manager.stateApi.getGridSize();
+    const gridSize = this.manager.stateApi.getPositionGridSize();
     const width = this.konva.proxyRect.width();
     const height = this.konva.proxyRect.height();
     const scaleX = rect.width / width;
@@ -498,7 +503,7 @@ export class CanvasEntityTransformer extends CanvasModuleBase {
       return;
     }
     const { rect } = this.manager.stateApi.getBbox();
-    const gridSize = this.manager.stateApi.getGridSize();
+    const gridSize = this.manager.stateApi.getPositionGridSize();
     const width = this.konva.proxyRect.width();
     const height = this.konva.proxyRect.height();
     const scaleX = rect.width / width;
@@ -523,7 +528,7 @@ export class CanvasEntityTransformer extends CanvasModuleBase {
 
   onDragMove = () => {
     // Snap the interaction rect to the grid
-    const gridSize = this.manager.stateApi.getGridSize();
+    const gridSize = this.manager.stateApi.getPositionGridSize();
     this.konva.proxyRect.x(roundToMultiple(this.konva.proxyRect.x(), gridSize));
     this.konva.proxyRect.y(roundToMultiple(this.konva.proxyRect.y(), gridSize));
 
@@ -908,6 +913,8 @@ export class CanvasEntityTransformer extends CanvasModuleBase {
       this.parent.renderer.konva.objectGroup.setAttrs(groupAttrs);
       this.parent.bufferRenderer.konva.group.setAttrs(groupAttrs);
     }
+
+    CanvasEntityTransformer.runBboxUpdatedCallbacks(this.parent);
   };
 
   calculateRect = debounce(() => {
@@ -1024,6 +1031,23 @@ export class CanvasEntityTransformer extends CanvasModuleBase {
 
   _hideBboxOutline = () => {
     this.konva.outlineRect.visible(false);
+  };
+
+  static registerBboxUpdatedCallback = (callback: LifecycleCallback) => {
+    const wrapped = async (adapter: CanvasEntityAdapter) => {
+      const result = await callback(adapter);
+      if (result) {
+        this.bboxUpdatedCallbacks.delete(wrapped);
+      }
+      return result;
+    };
+    this.bboxUpdatedCallbacks.add(wrapped);
+  };
+
+  private static runBboxUpdatedCallbacks = (adapter: CanvasEntityAdapter) => {
+    for (const callback of this.bboxUpdatedCallbacks) {
+      callback(adapter);
+    }
   };
 
   repr = () => {

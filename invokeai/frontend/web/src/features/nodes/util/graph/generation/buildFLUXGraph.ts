@@ -19,10 +19,14 @@ import { Graph } from 'features/nodes/util/graph/generation/Graph';
 import {
   CANVAS_OUTPUT_PREFIX,
   getBoardField,
-  getPresetModifiedPrompts,
   getSizes,
+  selectPresetModifiedPrompts,
 } from 'features/nodes/util/graph/graphBuilderUtils';
-import type { ImageOutputNodes } from 'features/nodes/util/graph/types';
+import {
+  type GraphBuilderReturn,
+  type ImageOutputNodes,
+  UnsupportedGenerationModeError,
+} from 'features/nodes/util/graph/types';
 import { t } from 'i18next';
 import { selectMainModelConfig } from 'services/api/endpoints/models';
 import type { Invocation } from 'services/api/types';
@@ -34,10 +38,7 @@ import { addIPAdapters } from './addIPAdapters';
 
 const log = logger('system');
 
-export const buildFLUXGraph = async (
-  state: RootState,
-  manager: CanvasManager
-): Promise<{ g: Graph; noise: Invocation<'noise' | 'flux_denoise'>; posCond: Invocation<'flux_text_encoder'> }> => {
+export const buildFLUXGraph = async (state: RootState, manager: CanvasManager): Promise<GraphBuilderReturn> => {
   const generationMode = await manager.compositor.getGenerationMode();
   log.debug({ generationMode }, 'Building FLUX graph');
 
@@ -83,7 +84,9 @@ export const buildFLUXGraph = async (
     //
     // The other asserts above are just for sanity & type check and should never be hit, so they do not have
     // translations.
-    assert(generationMode === 'inpaint' || generationMode === 'outpaint', t('toast.fluxFillIncompatibleWithT2IAndI2I'));
+    if (generationMode === 'txt2img' || generationMode === 'img2img') {
+      throw new UnsupportedGenerationModeError(t('toast.fluxFillIncompatibleWithT2IAndI2I'));
+    }
 
     // FLUX Fill wants much higher guidance values than normal FLUX - silently "fix" the value for the user.
     // TODO(psyche): Figure out a way to alert the user that this is happening - maybe return warnings from the graph
@@ -91,7 +94,7 @@ export const buildFLUXGraph = async (
     guidance = 30;
   }
 
-  const { positivePrompt } = getPresetModifiedPrompts(state);
+  const { positivePrompt } = selectPresetModifiedPrompts(state);
 
   const g = new Graph(getPrefixedId('flux_graph'));
   const modelLoader = g.addNode({
@@ -209,6 +212,7 @@ export const buildFLUXGraph = async (
       scaledSize,
       denoising_start,
       fp32: false,
+      seed,
     });
     g.upsertMetadata({ generation_mode: 'flux_inpaint' });
   } else if (generationMode === 'outpaint') {
@@ -225,6 +229,7 @@ export const buildFLUXGraph = async (
       scaledSize,
       denoising_start,
       fp32: false,
+      seed,
     });
     g.upsertMetadata({ generation_mode: 'flux_outpaint' });
   } else {
@@ -336,5 +341,9 @@ export const buildFLUXGraph = async (
   });
 
   g.setMetadataReceivingNode(canvasOutput);
-  return { g, noise: denoise, posCond };
+  return {
+    g,
+    seedFieldIdentifier: { nodeId: denoise.id, fieldName: 'seed' },
+    positivePromptFieldIdentifier: { nodeId: posCond.id, fieldName: 'prompt' },
+  };
 };

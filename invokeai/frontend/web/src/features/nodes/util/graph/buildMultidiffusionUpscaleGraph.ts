@@ -1,18 +1,18 @@
 import type { RootState } from 'app/store/store';
 import { getPrefixedId } from 'features/controlLayers/konva/util';
 import { fetchModelConfigWithTypeGuard } from 'features/metadata/util/modelFetchingHelpers';
+import type { FieldIdentifier } from 'features/nodes/types/field';
 import { addSDXLLoRAs } from 'features/nodes/util/graph/generation/addSDXLLoRAs';
 import { Graph } from 'features/nodes/util/graph/generation/Graph';
-import type { Invocation } from 'services/api/types';
 import { isNonRefinerMainModelConfig, isSpandrelImageToImageModelConfig } from 'services/api/types';
 import { assert } from 'tsafe';
 
 import { addLoRAs } from './generation/addLoRAs';
-import { getBoardField, getPresetModifiedPrompts } from './graphBuilderUtils';
+import { getBoardField, selectPresetModifiedPrompts } from './graphBuilderUtils';
 
 export const buildMultidiffusionUpscaleGraph = async (
   state: RootState
-): Promise<{ g: Graph; noise: Invocation<'noise'>; posCond: Invocation<'compel' | 'sdxl_compel_prompt'> }> => {
+): Promise<{ g: Graph; seedFieldIdentifier: FieldIdentifier; positivePromptFieldIdentifier: FieldIdentifier }> => {
   const {
     model,
     upscaleCfgScale: cfg_scale,
@@ -97,7 +97,7 @@ export const buildMultidiffusionUpscaleGraph = async (
 
   if (model.base === 'sdxl') {
     const { positivePrompt, negativePrompt, positiveStylePrompt, negativeStylePrompt } =
-      getPresetModifiedPrompts(state);
+      selectPresetModifiedPrompts(state);
 
     posCond = g.addNode({
       type: 'sdxl_compel_prompt',
@@ -130,7 +130,7 @@ export const buildMultidiffusionUpscaleGraph = async (
       negative_style_prompt: negativeStylePrompt,
     });
   } else {
-    const { positivePrompt, negativePrompt } = getPresetModifiedPrompts(state);
+    const { positivePrompt, negativePrompt } = selectPresetModifiedPrompts(state);
 
     posCond = g.addNode({
       type: 'compel',
@@ -243,5 +243,9 @@ export const buildMultidiffusionUpscaleGraph = async (
 
   g.addEdge(controlNetCollector, 'collection', tiledMultidiffusion, 'control');
 
-  return { g, noise, posCond };
+  return {
+    g,
+    seedFieldIdentifier: { nodeId: noise.id, fieldName: 'seed' },
+    positivePromptFieldIdentifier: { nodeId: posCond.id, fieldName: 'prompt' },
+  };
 };

@@ -32,7 +32,7 @@ const ParamFLUXVAEModelSelect = () => {
   });
 
   return (
-    <FormControl isDisabled={!options.length} isInvalid={!options.length} minW={0} flexGrow={1}>
+    <FormControl isDisabled={!options.length} isInvalid={!options.length} minW={0} flexGrow={1} gap={2}>
       <InformationalPopover feature="paramVAE">
         <FormLabel m={0}>{t('modelManager.vae')}</FormLabel>
       </InformationalPopover>

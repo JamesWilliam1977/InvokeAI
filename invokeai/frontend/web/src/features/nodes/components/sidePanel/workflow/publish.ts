@@ -4,6 +4,7 @@ import { skipToken } from '@reduxjs/toolkit/query';
 import { useAppSelector } from 'app/store/storeHooks';
 import { $templates } from 'features/nodes/store/nodesSlice';
 import {
+  selectNodes,
   selectNodesSlice,
   selectWorkflowFormNodeFieldFieldIdentifiersDeduped,
   selectWorkflowId,
@@ -11,13 +12,14 @@ import {
 import type { Templates } from 'features/nodes/store/types';
 import type { FieldIdentifier } from 'features/nodes/types/field';
 import { isBoardFieldType } from 'features/nodes/types/field';
-import { isInvocationNode } from 'features/nodes/types/invocation';
+import { isBatchNode, isGeneratorNode, isInvocationNode } from 'features/nodes/types/invocation';
 import { atom, computed } from 'nanostores';
 import { useMemo } from 'react';
 import { useGetBatchStatusQuery } from 'services/api/endpoints/queue';
 import { useGetWorkflowQuery } from 'services/api/endpoints/workflows';
 import { assert } from 'tsafe';
 
+export const $isPublishing = atom(false);
 export const $isInPublishFlow = atom(false);
 export const $outputNodeId = atom<string | null>(null);
 export const $isSelectingOutputNode = atom(false);
@@ -108,3 +110,36 @@ export const useIsWorkflowPublished = () => {
 
   return isPublished;
 };
+
+// These nodes are not allowed to be in published workflows because they dynamically generate model identifiers
+const NODE_TYPE_PUBLISH_DENYLIST = [
+  'metadata_to_model',
+  'metadata_to_sdxl_model',
+  'metadata_to_vae',
+  'metadata_to_lora_collection',
+  'metadata_to_loras',
+  'metadata_to_sdlx_loras',
+  'metadata_to_controlnets',
+  'metadata_to_ip_adapters',
+  'metadata_to_t2i_adapters',
+  'google_imagen3_generate_image',
+  'google_imagen3_edit_image',
+  'google_imagen4_generate_image',
+  'chatgpt_4o_generate_image',
+  'chatgpt_4o_edit_image',
+];
+
+export const selectHasUnpublishableNodes = createSelector(selectNodes, (nodes) => {
+  for (const node of nodes) {
+    if (!isInvocationNode(node)) {
+      return true;
+    }
+    if (isBatchNode(node) || isGeneratorNode(node)) {
+      return true;
+    }
+    if (NODE_TYPE_PUBLISH_DENYLIST.includes(node.data.type)) {
+      return true;
+    }
+  }
+  return false;
+});

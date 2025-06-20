@@ -22,10 +22,12 @@ import { NodeFieldElementOverlay } from 'features/nodes/components/sidePanel/bui
 import { useDoesWorkflowHaveUnsavedChanges } from 'features/nodes/components/sidePanel/workflow/IsolatedWorkflowBuilderWatcher';
 import {
   $isInPublishFlow,
+  $isPublishing,
   $isReadyToDoValidationRun,
   $isSelectingOutputNode,
   $outputNodeId,
   $validationRunData,
+  selectHasUnpublishableNodes,
   usePublishInputs,
 } from 'features/nodes/components/sidePanel/workflow/publish';
 import { useInputFieldTemplateTitleOrThrow } from 'features/nodes/hooks/useInputFieldTemplateTitleOrThrow';
@@ -36,7 +38,6 @@ import { useNodeUserTitleOrThrow } from 'features/nodes/hooks/useNodeUserTitleOr
 import { useOutputFieldNames } from 'features/nodes/hooks/useOutputFieldNames';
 import { useOutputFieldTemplate } from 'features/nodes/hooks/useOutputFieldTemplate';
 import { useZoomToNode } from 'features/nodes/hooks/useZoomToNode';
-import { selectHasBatchOrGeneratorNodes } from 'features/nodes/store/selectors';
 import { useEnqueueWorkflows } from 'features/queue/hooks/useEnqueueWorkflows';
 import { $isReadyToEnqueue } from 'features/queue/store/readiness';
 import { selectAllowPublishWorkflows } from 'features/system/store/configSlice';
@@ -183,13 +184,14 @@ SelectOutputNodeButton.displayName = 'SelectOutputNodeButton';
 
 const CancelPublishButton = memo(() => {
   const { t } = useTranslation();
+  const isPublishing = useStore($isPublishing);
   const onClick = useCallback(() => {
     $isInPublishFlow.set(false);
     $isSelectingOutputNode.set(false);
     $outputNodeId.set(null);
   }, []);
   return (
-    <Button leftIcon={<PiXBold />} onClick={onClick}>
+    <Button leftIcon={<PiXBold />} onClick={onClick} isDisabled={isPublishing}>
       {t('common.cancel')}
     </Button>
   );
@@ -198,10 +200,11 @@ CancelPublishButton.displayName = 'CancelDeployButton';
 
 const PublishWorkflowButton = memo(() => {
   const { t } = useTranslation();
+  const isPublishing = useStore($isPublishing);
   const isReadyToDoValidationRun = useStore($isReadyToDoValidationRun);
   const isReadyToEnqueue = useStore($isReadyToEnqueue);
   const doesWorkflowHaveUnsavedChanges = useDoesWorkflowHaveUnsavedChanges();
-  const hasBatchOrGeneratorNodes = useAppSelector(selectHasBatchOrGeneratorNodes);
+  const hasUnpublishableNodes = useAppSelector(selectHasUnpublishableNodes);
   const outputNodeId = useStore($outputNodeId);
   const isSelectingOutputNode = useStore($isSelectingOutputNode);
   const inputs = usePublishInputs();
@@ -211,6 +214,7 @@ const PublishWorkflowButton = memo(() => {
 
   const enqueue = useEnqueueWorkflows();
   const onClick = useCallback(async () => {
+    $isPublishing.set(true);
     const result = await withResultAsync(() => enqueue(true, true));
     if (result.isErr()) {
       toast({
@@ -244,30 +248,41 @@ const PublishWorkflowButton = memo(() => {
       });
       log.debug(parseify(result.value), 'Enqueued batch');
     }
+    $isPublishing.set(false);
   }, [enqueue, projectUrl, t]);
+
+  const isDisabled = useMemo(() => {
+    return (
+      !allowPublishWorkflows ||
+      !isReadyToEnqueue ||
+      doesWorkflowHaveUnsavedChanges ||
+      hasUnpublishableNodes ||
+      !isReadyToDoValidationRun ||
+      !(outputNodeId !== null && !isSelectingOutputNode) ||
+      isPublishing
+    );
+  }, [
+    allowPublishWorkflows,
+    doesWorkflowHaveUnsavedChanges,
+    hasUnpublishableNodes,
+    isReadyToDoValidationRun,
+    isReadyToEnqueue,
+    isSelectingOutputNode,
+    outputNodeId,
+    isPublishing,
+  ]);
 
   return (
     <PublishTooltip
       isWorkflowSaved={!doesWorkflowHaveUnsavedChanges}
-      hasBatchOrGeneratorNodes={hasBatchOrGeneratorNodes}
+      hasUnpublishableNodes={hasUnpublishableNodes}
       isReadyToEnqueue={isReadyToEnqueue}
       hasOutputNode={outputNodeId !== null && !isSelectingOutputNode}
       hasPublishableInputs={inputs.publishable.length > 0}
       hasUnpublishableInputs={inputs.unpublishable.length > 0}
     >
-      <Button
-        leftIcon={<PiLightningFill />}
-        isDisabled={
-          !allowPublishWorkflows ||
-          !isReadyToEnqueue ||
-          doesWorkflowHaveUnsavedChanges ||
-          hasBatchOrGeneratorNodes ||
-          !isReadyToDoValidationRun ||
-          !(outputNodeId !== null && !isSelectingOutputNode)
-        }
-        onClick={onClick}
-      >
-        {t('workflows.builder.publish')}
+      <Button leftIcon={<PiLightningFill />} isDisabled={isDisabled} onClick={onClick}>
+        {isPublishing ? t('workflows.builder.publishing') : t('workflows.builder.publish')}
       </Button>
     </PublishTooltip>
   );
@@ -330,31 +345,27 @@ export const StartPublishFlowButton = memo(() => {
   const allowPublishWorkflows = useAppSelector(selectAllowPublishWorkflows);
   const isReadyToEnqueue = useStore($isReadyToEnqueue);
   const doesWorkflowHaveUnsavedChanges = useDoesWorkflowHaveUnsavedChanges();
-  const hasBatchOrGeneratorNodes = useAppSelector(selectHasBatchOrGeneratorNodes);
+  const hasUnpublishableNodes = useAppSelector(selectHasUnpublishableNodes);
   const inputs = usePublishInputs();
 
   const onClick = useCallback(() => {
     $isInPublishFlow.set(true);
   }, []);
 
+  const isDisabled = useMemo(() => {
+    return !allowPublishWorkflows || !isReadyToEnqueue || doesWorkflowHaveUnsavedChanges || hasUnpublishableNodes;
+  }, [allowPublishWorkflows, doesWorkflowHaveUnsavedChanges, hasUnpublishableNodes, isReadyToEnqueue]);
+
   return (
     <PublishTooltip
       isWorkflowSaved={!doesWorkflowHaveUnsavedChanges}
-      hasBatchOrGeneratorNodes={hasBatchOrGeneratorNodes}
+      hasUnpublishableNodes={hasUnpublishableNodes}
       isReadyToEnqueue={isReadyToEnqueue}
       hasOutputNode={true}
       hasPublishableInputs={inputs.publishable.length > 0}
       hasUnpublishableInputs={inputs.unpublishable.length > 0}
     >
-      <Button
-        onClick={onClick}
-        leftIcon={<PiLightningFill />}
-        variant="ghost"
-        size="sm"
-        isDisabled={
-          !allowPublishWorkflows || !isReadyToEnqueue || doesWorkflowHaveUnsavedChanges || hasBatchOrGeneratorNodes
-        }
-      >
+      <Button onClick={onClick} leftIcon={<PiLightningFill />} variant="ghost" size="sm" isDisabled={isDisabled}>
         {t('workflows.builder.publish')}
       </Button>
     </PublishTooltip>
@@ -366,7 +377,7 @@ StartPublishFlowButton.displayName = 'StartPublishFlowButton';
 const PublishTooltip = memo(
   ({
     isWorkflowSaved,
-    hasBatchOrGeneratorNodes,
+    hasUnpublishableNodes,
     isReadyToEnqueue,
     hasOutputNode,
     hasPublishableInputs,
@@ -374,7 +385,7 @@ const PublishTooltip = memo(
     children,
   }: PropsWithChildren<{
     isWorkflowSaved: boolean;
-    hasBatchOrGeneratorNodes: boolean;
+    hasUnpublishableNodes: boolean;
     isReadyToEnqueue: boolean;
     hasOutputNode: boolean;
     hasPublishableInputs: boolean;
@@ -396,8 +407,8 @@ const PublishTooltip = memo(
       if (!isWorkflowSaved) {
         _errors.push(t('workflows.builder.errorWorkflowHasUnsavedChanges'));
       }
-      if (hasBatchOrGeneratorNodes) {
-        _errors.push(t('workflows.builder.errorWorkflowHasBatchOrGeneratorNodes'));
+      if (hasUnpublishableNodes) {
+        _errors.push(t('workflows.builder.errorWorkflowHasUnpublishableNodes'));
       }
       if (!isReadyToEnqueue) {
         _errors.push(t('workflows.builder.errorWorkflowHasInvalidGraph'));
@@ -406,7 +417,7 @@ const PublishTooltip = memo(
         _errors.push(t('workflows.builder.errorWorkflowHasNoOutputNode'));
       }
       return _errors;
-    }, [hasBatchOrGeneratorNodes, hasOutputNode, isReadyToEnqueue, isWorkflowSaved, t]);
+    }, [hasUnpublishableNodes, hasOutputNode, isReadyToEnqueue, isWorkflowSaved, t]);
 
     if (errors.length === 0 && warnings.length === 0) {
       return children;

@@ -148,7 +148,7 @@ class ModelInstallService(ModelInstallServiceBase):
     def _clear_pending_jobs(self) -> None:
         for job in self.list_jobs():
             if not job.in_terminal_state:
-                self._logger.warning("Cancelling job {job.id}")
+                self._logger.warning(f"Cancelling job {job.id}")
                 self.cancel_job(job)
         while True:
             try:
@@ -647,10 +647,18 @@ class ModelInstallService(ModelInstallServiceBase):
         hash_algo = self._app_config.hashing_algorithm
         fields = config.model_dump()
 
+        # WARNING!
+        # The legacy probe relies on the implicit order of tests to determine model classification.
+        # This can lead to regressions between the legacy and new probes.
+        # Do NOT change the order of `probe` and `classify` without implementing one of the following fixes:
+        # Short-term fix: `classify` tests `matches` in the same order as the legacy probe.
+        # Long-term fix: Improve `matches` to be more specific so that only one config matches
+        #   any given model - eliminating ambiguity and removing reliance on order.
+        # After implementing either of these fixes, remove @pytest.mark.xfail from `test_regression_against_model_probe`
         try:
-            return ModelConfigBase.classify(model_path=model_path, hash_algo=hash_algo, **fields)
-        except InvalidModelConfigException:
             return ModelProbe.probe(model_path=model_path, fields=fields, hash_algo=hash_algo)  # type: ignore
+        except InvalidModelConfigException:
+            return ModelConfigBase.classify(model_path, hash_algo, **fields)
 
     def _register(
         self, model_path: Path, config: Optional[ModelRecordChanges] = None, info: Optional[AnyModelConfig] = None

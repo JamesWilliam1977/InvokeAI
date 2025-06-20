@@ -144,34 +144,37 @@ class ModelConfigBase(ABC, BaseModel):
     submodels: Optional[Dict[SubModelType, SubmodelDefinition]] = Field(
         description="Loadable submodels in this model", default=None
     )
+    usage_info: Optional[str] = Field(default=None, description="Usage information for this model")
 
-    _USING_LEGACY_PROBE: ClassVar[set] = set()
-    _USING_CLASSIFY_API: ClassVar[set] = set()
+    USING_LEGACY_PROBE: ClassVar[set] = set()
+    USING_CLASSIFY_API: ClassVar[set] = set()
     _MATCH_SPEED: ClassVar[MatchSpeed] = MatchSpeed.MED
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         if issubclass(cls, LegacyProbeMixin):
-            ModelConfigBase._USING_LEGACY_PROBE.add(cls)
+            ModelConfigBase.USING_LEGACY_PROBE.add(cls)
         else:
-            ModelConfigBase._USING_CLASSIFY_API.add(cls)
+            ModelConfigBase.USING_CLASSIFY_API.add(cls)
 
     @staticmethod
     def all_config_classes():
-        subclasses = ModelConfigBase._USING_LEGACY_PROBE | ModelConfigBase._USING_CLASSIFY_API
+        subclasses = ModelConfigBase.USING_LEGACY_PROBE | ModelConfigBase.USING_CLASSIFY_API
         concrete = {cls for cls in subclasses if not isabstract(cls)}
         return concrete
 
     @staticmethod
-    def classify(model_path: Path, hash_algo: HASHING_ALGORITHMS = "blake3_single", **overrides):
+    def classify(mod: str | Path | ModelOnDisk, hash_algo: HASHING_ALGORITHMS = "blake3_single", **overrides):
         """
         Returns the best matching ModelConfig instance from a model's file/folder path.
         Raises InvalidModelConfigException if no valid configuration is found.
         Created to deprecate ModelProbe.probe
         """
-        candidates = ModelConfigBase._USING_CLASSIFY_API
+        if isinstance(mod, Path | str):
+            mod = ModelOnDisk(mod, hash_algo)
+
+        candidates = ModelConfigBase.USING_CLASSIFY_API
         sorted_by_match_speed = sorted(candidates, key=lambda cls: (cls._MATCH_SPEED, cls.__name__))
-        mod = ModelOnDisk(model_path, hash_algo)
 
         for config_cls in sorted_by_match_speed:
             try:
@@ -293,7 +296,7 @@ class LoRAConfigBase(ABC, BaseModel):
         from invokeai.backend.patches.lora_conversions.formats import flux_format_from_state_dict
 
         sd = mod.load_state_dict(mod.path)
-        value = flux_format_from_state_dict(sd)
+        value = flux_format_from_state_dict(sd, mod.metadata())
         mod.cache[key] = value
         return value
 
@@ -600,6 +603,21 @@ class LlavaOnevisionConfig(DiffusersConfigBase, ModelConfigBase):
         }
 
 
+class ApiModelConfig(MainConfigBase, ModelConfigBase):
+    """Model config for API-based models."""
+
+    format: Literal[ModelFormat.Api] = ModelFormat.Api
+
+    @classmethod
+    def matches(cls, mod: ModelOnDisk) -> bool:
+        # API models are not stored on disk, so we can't match them.
+        return False
+
+    @classmethod
+    def parse(cls, mod: ModelOnDisk) -> dict[str, Any]:
+        raise NotImplementedError("API models are not parsed from disk.")
+
+
 def get_model_discriminator_value(v: Any) -> str:
     """
     Computes the discriminator value for a model config.
@@ -667,6 +685,7 @@ AnyModelConfig = Annotated[
         Annotated[SigLIPConfig, SigLIPConfig.get_tag()],
         Annotated[FluxReduxConfig, FluxReduxConfig.get_tag()],
         Annotated[LlavaOnevisionConfig, LlavaOnevisionConfig.get_tag()],
+        Annotated[ApiModelConfig, ApiModelConfig.get_tag()],
     ],
     Discriminator(get_model_discriminator_value),
 ]

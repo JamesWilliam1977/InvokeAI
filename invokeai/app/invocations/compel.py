@@ -1,7 +1,7 @@
 from typing import Iterator, List, Optional, Tuple, Union, cast
 
 import torch
-from compel import Compel, ReturnedEmbeddingsType
+from compel import Compel, ReturnedEmbeddingsType, SplitLongTextMode
 from compel.prompt_parser import Blend, Conjunction, CrossAttentionControlSubstitute, FlattenedPrompt, Fragment
 from transformers import CLIPTextModel, CLIPTextModelWithProjection, CLIPTokenizer
 
@@ -104,6 +104,7 @@ class CompelInvocation(BaseInvocation):
                 dtype_for_device_getter=TorchDevice.choose_torch_dtype,
                 truncate_long_prompts=False,
                 device=TorchDevice.choose_torch_device(),
+                split_long_text_mode=SplitLongTextMode.SENTENCES,
             )
 
             conjunction = Compel.parse_prompt_string(self.prompt)
@@ -112,6 +113,13 @@ class CompelInvocation(BaseInvocation):
                 log_tokenization_for_conjunction(conjunction, patched_tokenizer)
 
             c, _options = compel.build_conditioning_tensor_for_conjunction(conjunction)
+
+        del compel
+        del patched_tokenizer
+        del tokenizer
+        del ti_manager
+        del text_encoder
+        del text_encoder_info
 
         c = c.detach().to("cpu")
 
@@ -205,6 +213,7 @@ class SDXLPromptInvocationBase:
                 returned_embeddings_type=ReturnedEmbeddingsType.PENULTIMATE_HIDDEN_STATES_NON_NORMALIZED,  # TODO: clip skip
                 requires_pooled=get_pooled,
                 device=TorchDevice.choose_torch_device(),
+                split_long_text_mode=SplitLongTextMode.SENTENCES,
             )
 
             conjunction = Compel.parse_prompt_string(prompt)
@@ -220,7 +229,10 @@ class SDXLPromptInvocationBase:
             else:
                 c_pooled = None
 
+        del compel
+        del patched_tokenizer
         del tokenizer
+        del ti_manager
         del text_encoder
         del text_encoder_info
 

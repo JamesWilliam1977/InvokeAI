@@ -10,9 +10,8 @@ import BboxScaledHeight from 'features/parameters/components/Bbox/BboxScaledHeig
 import BboxScaledWidth from 'features/parameters/components/Bbox/BboxScaledWidth';
 import BboxScaleMethod from 'features/parameters/components/Bbox/BboxScaleMethod';
 import { BboxSettings } from 'features/parameters/components/Bbox/BboxSettings';
-import { ParamSeedNumberInput } from 'features/parameters/components/Seed/ParamSeedNumberInput';
-import { ParamSeedRandomize } from 'features/parameters/components/Seed/ParamSeedRandomize';
-import { ParamSeedShuffle } from 'features/parameters/components/Seed/ParamSeedShuffle';
+import { ParamSeed } from 'features/parameters/components/Seed/ParamSeed';
+import { useIsApiModel } from 'features/parameters/hooks/useIsApiModel';
 import { useExpanderToggle } from 'features/settingsAccordions/hooks/useExpanderToggle';
 import { useStandaloneAccordionToggle } from 'features/settingsAccordions/hooks/useStandaloneAccordionToggle';
 import { memo } from 'react';
@@ -61,6 +60,7 @@ export const ImageSettingsAccordion = memo(() => {
   });
   const isFLUX = useAppSelector(selectIsFLUX);
   const isSD3 = useAppSelector(selectIsSD3);
+  const isApiModel = useIsApiModel();
 
   return (
     <StandaloneAccordion
@@ -69,25 +69,31 @@ export const ImageSettingsAccordion = memo(() => {
       isOpen={isOpenAccordion}
       onToggle={onToggleAccordion}
     >
-      <Flex px={4} pt={4} w="full" h="full" flexDir="column" data-testid="image-settings-accordion">
+      <Flex
+        px={4}
+        pt={4}
+        pb={isApiModel ? 4 : 0}
+        w="full"
+        h="full"
+        flexDir="column"
+        data-testid="image-settings-accordion"
+      >
         <BboxSettings />
-        <Flex py={3} gap={4} alignItems="center">
-          <ParamSeedNumberInput />
-          <ParamSeedShuffle />
-          <ParamSeedRandomize />
-        </Flex>
-        <Expander label={t('accordions.advanced.options')} isOpen={isOpenExpander} onToggle={onToggleExpander}>
-          <Flex gap={4} pb={4} flexDir="column">
-            {(isFLUX || isSD3) && <ParamOptimizedDenoisingToggle />}
-            <BboxScaleMethod />
-            {scaleMethod !== 'none' && (
-              <FormControlGroup formLabelProps={scalingLabelProps}>
-                <BboxScaledWidth />
-                <BboxScaledHeight />
-              </FormControlGroup>
-            )}
-          </Flex>
-        </Expander>
+        {!isApiModel && <ParamSeed py={3} />}
+        {!isApiModel && (
+          <Expander label={t('accordions.advanced.options')} isOpen={isOpenExpander} onToggle={onToggleExpander}>
+            <Flex gap={4} pb={4} flexDir="column">
+              {(isFLUX || isSD3) && <ParamOptimizedDenoisingToggle />}
+              <BboxScaleMethod />
+              {scaleMethod !== 'none' && (
+                <FormControlGroup formLabelProps={scalingLabelProps}>
+                  <BboxScaledWidth />
+                  <BboxScaledHeight />
+                </FormControlGroup>
+              )}
+            </Flex>
+          </Expander>
+        )}
       </Flex>
     </StandaloneAccordion>
   );

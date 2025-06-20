@@ -26,7 +26,9 @@ class BaseModelType(str, Enum):
     StableDiffusionXLRefiner = "sdxl-refiner"
     Flux = "flux"
     CogView4 = "cogview4"
-    # Kandinsky2_1 = "kandinsky-2.1"
+    Imagen3 = "imagen3"
+    Imagen4 = "imagen4"
+    ChatGPT4o = "chatgpt-4o"
 
 
 class ModelType(str, Enum):
@@ -98,6 +100,7 @@ class ModelFormat(str, Enum):
     BnbQuantizedLlmInt8b = "bnb_quantized_int8b"
     BnbQuantizednf4b = "bnb_quantized_nf4b"
     GGUFQuantized = "gguf_quantized"
+    Api = "api"
 
 
 class SchedulerPredictionType(str, Enum):
@@ -134,6 +137,7 @@ class FluxLoRAFormat(str, Enum):
     Kohya = "flux.kohya"
     OneTrainer = "flux.onetrainer"
     Control = "flux.control"
+    AIToolkit = "flux.aitoolkit"
 
 
 AnyVariant: TypeAlias = Union[ModelVariantType, ClipVariantType, None]

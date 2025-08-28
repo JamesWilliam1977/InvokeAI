@@ -30,6 +30,7 @@ import {
   isNonRefinerMainModelConfig,
   isNonSDXLMainModelConfig,
   isRefinerMainModelModelConfig,
+  isRunwayModelConfig,
   isSD3MainModelModelConfig,
   isSDXLMainModelModelConfig,
   isSigLipModelConfig,
@@ -38,6 +39,8 @@ import {
   isT5EncoderModelConfig,
   isTIModelConfig,
   isVAEModelConfig,
+  isVeo3ModelConfig,
+  isVideoModelConfig,
 } from 'services/api/types';
 
 type ModelHookArgs = { excludeSubmodels?: boolean };
@@ -104,6 +107,9 @@ export const useImagen3Models = buildModelsHook(isImagen3ModelConfig);
 export const useImagen4Models = buildModelsHook(isImagen4ModelConfig);
 export const useChatGPT4oModels = buildModelsHook(isChatGPT4oModelConfig);
 export const useFluxKontextModels = buildModelsHook(isFluxKontextApiModelConfig);
+export const useVeo3Models = buildModelsHook(isVeo3ModelConfig);
+export const useRunwayModels = buildModelsHook(isRunwayModelConfig);
+export const useVideoModels = buildModelsHook(isVideoModelConfig);
 
 const buildModelsSelector =
   <T extends AnyModelConfig>(typeGuard: (config: AnyModelConfig) => config is T): Selector<RootState, T[]> =>

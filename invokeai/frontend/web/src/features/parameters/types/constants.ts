@@ -18,6 +18,8 @@ export const MODEL_TYPE_MAP: Record<BaseModelType, string> = {
   'chatgpt-4o': 'ChatGPT 4o',
   'flux-kontext': 'Flux Kontext',
   'gemini-2.5': 'Gemini 2.5',
+  veo3: 'Veo3',
+  runway: 'Runway',
 };
 
 /**
@@ -37,12 +39,14 @@ export const MODEL_TYPE_SHORT_MAP: Record<BaseModelType, string> = {
   'chatgpt-4o': 'ChatGPT 4o',
   'flux-kontext': 'Flux Kontext',
   'gemini-2.5': 'Gemini 2.5',
+  veo3: 'Veo3',
+  runway: 'Runway',
 };
 
 /**
  * Mapping of base model to CLIP skip parameter constraints
  */
-export const CLIP_SKIP_MAP: Record<BaseModelType, { maxClip: number; markers: number[] }> = {
+export const CLIP_SKIP_MAP: { [key in BaseModelType]?: { maxClip: number; markers: number[] } } = {
   any: {
     maxClip: 0,
     markers: [],
@@ -181,3 +185,7 @@ export const SUPPORTS_ASPECT_RATIO_BASE_MODELS: BaseModelType[] = [
   'flux-kontext',
   'chatgpt-4o',
 ];
+
+export const VIDEO_BASE_MODELS = ['veo3', 'runway'];
+
+export const REQUIRES_STARTING_FRAME_BASE_MODELS = ['runway'];

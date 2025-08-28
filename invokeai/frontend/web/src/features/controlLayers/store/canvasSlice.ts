@@ -1611,6 +1611,7 @@ const slice = createSlice({
           state.bbox.rect.width = 1024;
           state.bbox.rect.height = 1024;
         }
+
         syncScaledSize(state);
       }
     });

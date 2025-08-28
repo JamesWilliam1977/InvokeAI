@@ -4,6 +4,7 @@ import { InformationalPopover } from 'common/components/InformationalPopover/Inf
 import { selectIsApiBaseModel, selectWidth, widthChanged } from 'features/controlLayers/store/paramsSlice';
 import { selectGridSize, selectOptimalDimension } from 'features/controlLayers/store/selectors';
 import { selectWidthConfig } from 'features/system/store/configSlice';
+import { selectActiveTab } from 'features/ui/store/uiSelectors';
 import { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -15,6 +16,7 @@ export const DimensionsWidth = memo(() => {
   const config = useAppSelector(selectWidthConfig);
   const isApiModel = useAppSelector(selectIsApiBaseModel);
   const gridSize = useAppSelector(selectGridSize);
+  const activeTab = useAppSelector(selectActiveTab);
 
   const onChange = useCallback(
     (v: number) => {
@@ -29,7 +31,7 @@ export const DimensionsWidth = memo(() => {
   );
 
   return (
-    <FormControl isDisabled={isApiModel}>
+    <FormControl isDisabled={isApiModel || activeTab === 'video'}>
       <InformationalPopover feature="paramWidth">
         <FormLabel>{t('parameters.width')}</FormLabel>
       </InformationalPopover>
